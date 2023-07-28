@@ -12,7 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.AndroidPaint
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
@@ -211,32 +214,58 @@ private fun DrawScope.dataDrawing(
 
     for (i in points.indices) {
 
-        val p1 = Offset(
+        val p0 = Offset(
             x = (points[i].xValue - initialXValue) * xPxPerUnit + startDrawingWidth,
             y = endDrawingHeight - (points[i].yValue - initialYValue) * yPxPerUnit,
         )
-        val p2 = points.getOrNull(i + 1)?.let { nextPoint ->
-            Offset(
+        val bezierPoints = points.getOrNull(i + 1)?.let { nextPoint ->
+
+            val p3 = Offset(
                 x = (nextPoint.xValue - initialXValue) * xPxPerUnit + startDrawingWidth,
                 y = endDrawingHeight - (nextPoint.yValue - initialYValue) * yPxPerUnit,
             )
+
+            val xBezierConnectionPoint = (p0.x + p3.x) / 2
+
+            val p1 = Offset(
+                x = xBezierConnectionPoint,
+                y = p0.y,
+            )
+
+            val p2 = Offset(
+                x = xBezierConnectionPoint,
+                y = p3.y,
+            )
+
+            BezierPoints(p0 = p0, p1 = p1, p2 = p2, p3 = p3)
         }
 
         with(drawContext.canvas) {
             drawCircle(
-                center = p1,
+                center = p0,
                 radius = pointsRadius,
                 paint = composePaint,
             )
-            p2?.let { nextPoint ->
-                drawLine(
-                    p1 = p1,
-                    p2 = nextPoint,
-                    paint = composePaint,
+            bezierPoints?.let { bezierPoints ->
+                val path = Path().apply {
+                    reset()
+                    moveTo(p0.x, p0.y)
+                    cubicTo(
+                        bezierPoints.p1.x, bezierPoints.p1.y,
+                        bezierPoints.p2.x, bezierPoints.p2.y,
+                        bezierPoints.p3.x, bezierPoints.p3.y,
+                    )
+                }
+                drawPath(
+                    path,
+                    color = Color.Black,
+                    style = Stroke(
+                        width = 5f,
+                        cap = StrokeCap.Round
+                    )
                 )
             }
         }
-
     }
 }
 
