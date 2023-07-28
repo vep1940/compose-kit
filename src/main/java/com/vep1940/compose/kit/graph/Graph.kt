@@ -330,13 +330,20 @@ private fun DrawScope.dataDrawing(
     val xPxPerUnit = (endDrawingWidth - startDrawingWidth) / (xMaxMilestone - initialXValue)
     val yPxPerUnit = (endDrawingHeight - startDrawingHeight) / (yMaxMilestone - initialYValue)
 
+    val dataPoints = mutableListOf<Offset>()
+    val linePath = Path()
+    val areaPath = Path()
+
     for (i in points.indices) {
 
         val p0 = Offset(
             x = (points[i].xValue - initialXValue) * xPxPerUnit + startDrawingWidth,
             y = endDrawingHeight - (points[i].yValue - initialYValue) * yPxPerUnit,
         )
-        val bezierPoints = points.getOrNull(i + 1)?.let { nextPoint ->
+
+        dataPoints.add(p0)
+
+        points.getOrNull(i + 1)?.let { nextPoint ->
 
             val p3 = Offset(
                 x = (nextPoint.xValue - initialXValue) * xPxPerUnit + startDrawingWidth,
@@ -355,45 +362,46 @@ private fun DrawScope.dataDrawing(
                 y = p3.y,
             )
 
-            BezierPoints(p0 = p0, p1 = p1, p2 = p2, p3 = p3)
-        }
-
-        with(drawContext.canvas) {
-            bezierPoints?.let { bezierPoints ->
-                val path = Path().apply {
-                    reset()
-                    moveTo(p0.x, p0.y)
-                    cubicTo(
-                        bezierPoints.p1.x, bezierPoints.p1.y,
-                        bezierPoints.p2.x, bezierPoints.p2.y,
-                        bezierPoints.p3.x, bezierPoints.p3.y,
-                    )
-                }
-
-                drawPath(
-                    path,
-                    color = lineColor,
-                    style = Stroke(
-                        width = lineWidth.toPx(),
-                        cap = StrokeCap.Round
-                    )
-                )
-
-                path.apply {
-                    lineTo(bezierPoints.p3.x, endDrawingHeight)
-                    lineTo(p0.x, endDrawingHeight)
-                    close()
-                }
-
-                drawPath(
-                    path = path,
-                    brush = Brush.verticalGradient(areaColor),
+            val path = Path().apply {
+                moveTo(p0.x, p0.y)
+                cubicTo(
+                    p1.x, p1.y,
+                    p2.x, p2.y,
+                    p3.x, p3.y,
                 )
             }
 
+            linePath.addPath(path = path)
+
+            path.apply {
+                lineTo(p3.x, endDrawingHeight)
+                lineTo(p0.x, endDrawingHeight)
+                close()
+            }
+
+            areaPath.addPath(path = path)
+        }
+    }
+
+    drawPath(
+        path = areaPath,
+        brush = Brush.verticalGradient(areaColor),
+    )
+
+    drawPath(
+        path = linePath,
+        color = lineColor,
+        style = Stroke(
+            width = lineWidth.toPx(),
+            cap = StrokeCap.Round
+        )
+    )
+
+    dataPoints.forEach { point ->
+        with(drawContext.canvas) {
             composePaint.withColor(pointsColor) { composePaint ->
                 drawCircle(
-                    center = p0,
+                    center = point,
                     radius = pointsRadius.toPx(),
                     paint = composePaint,
                 )
