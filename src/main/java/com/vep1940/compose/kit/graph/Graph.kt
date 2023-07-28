@@ -1,6 +1,5 @@
 package com.vep1940.compose.kit.graph
 
-import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,19 +14,21 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.vep1940.compose.kit.util.getTextHeight
-import com.vep1940.compose.kit.util.withColor
-import com.vep1940.compose.kit.util.withTextSize
 import kotlin.math.ceil
-import android.graphics.Paint as NativePaint
 
 
+@OptIn(ExperimentalTextApi::class)
 @Composable
 fun Graph(
     points: List<GraphData<Int>>,
@@ -58,77 +59,91 @@ fun Graph(
     lineColor: Color = Color.Black,
     areaColor: List<Color> = listOf(Color.Transparent, Color.Transparent),
 ) {
+    val textMeasurer = rememberTextMeasurer()
+
     Canvas(
         modifier = modifier
             .fillMaxSize()
     ) {
 
-        val nativePaint = NativePaint()
-
         val xMax = points.maxOf { it.xValue }
         val yMax = points.maxOf { it.yValue }
 
-        // maxValue - initialValue plus 1 in order to adding the initialValue to the difference
-        val xAxisMilestonesCounter = (ceil((xMax - initialXValue) / xStep) + 1).toInt()
-        val yAxisMilestonesCounter = (ceil((yMax - initialYValue) / yStep) + 1).toInt()
+        // maxValue - initialValue plus 1 in order to add the initialValue to the difference
+        val xMilestonesCounter = (ceil((xMax - initialXValue) / xStep) + 1).toInt()
+        val yMilestonesCounter = (ceil((yMax - initialYValue) / yStep) + 1).toInt()
 
-        val (xTextHeight, xTextWidth) = getTextSize(nativePaint, xTextSize.toPx(), xMax)
-        val (yTextHeight, yTextWidth) = getTextSize(nativePaint, yTextSize.toPx(), yMax)
+        val xTextStyle = TextStyle(
+            color = xTextColor,
+            fontSize = xTextSize,
+        )
+        val yTextStyle = TextStyle(
+            color = yTextColor,
+            fontSize = yTextSize,
+        )
+
+        val xMeasuredTextSize = textMeasurer.measure(
+            text = ((xMilestonesCounter - 1) * xStep + initialXValue).toInt().toString(),
+            style = xTextStyle,
+        ).size
+        val yMeasuredTextSize = textMeasurer.measure(
+            text = ((yMilestonesCounter - 1) * yStep + initialYValue).toInt().toString(),
+            style = yTextStyle,
+        ).size
 
         val pointsRadiusPx = pointsRadius.toPx()
 
-        val startDrawingWidth = yTextWidth + maxOf(
+        val startDrawingWidth = yMeasuredTextSize.width + maxOf(
             yMilestonesWidth.toPx(),
             pointsRadiusPx
         ) + yTextPadding.toPx()
-        val endDrawingWidth = size.width - maxOf((xTextWidth / 2), pointsRadiusPx)
-        val startDrawingHeight = maxOf(yTextHeight / 2, pointsRadiusPx)
-        val endDrawingHeight = size.height - (xTextHeight + maxOf(
+        val endDrawingWidth = size.width - maxOf((xMeasuredTextSize.width / 2f), pointsRadiusPx)
+        val startDrawingHeight = maxOf(yMeasuredTextSize.height / 2f, pointsRadiusPx)
+        val endDrawingHeight = size.height - (xMeasuredTextSize.height + maxOf(
             xMilestonesHeight.toPx(),
             pointsRadiusPx
         ) + xTextPadding.toPx())
 
         xAxisDrawing(
-            milestonesCounter = xAxisMilestonesCounter,
+            milestonesCounter = xMilestonesCounter,
             initialValue = initialXValue,
             step = xStep,
             startWidth = startDrawingWidth,
             startHeight = startDrawingHeight,
             endWidth = endDrawingWidth,
             endHeight = endDrawingHeight,
-            textSize = xTextSize,
-            textColor = xTextColor,
+            textMeasurer = textMeasurer,
+            textStyle = xTextStyle,
             milestonesHeight = xMilestonesHeight,
             milestonesWidth = xMilestonesWidth,
             milestonesColor = xMilestonesColor,
             matrixColor = xMatrixColor,
             axisColor = xAxisColor,
-            nativePaint = nativePaint,
         )
 
         yAxisDrawing(
-            milestonesCounter = yAxisMilestonesCounter,
+            milestonesCounter = yMilestonesCounter,
             initialValue = initialYValue,
             step = yStep,
             startWidth = startDrawingWidth,
             startHeight = startDrawingHeight,
             endWidth = endDrawingWidth,
             endHeight = endDrawingHeight,
-            textSize = yTextSize,
-            textColor = yTextColor,
+            textMeasurer = textMeasurer,
+            measuredTextSize = yMeasuredTextSize,
+            textStyle = yTextStyle,
             milestonesHeight = yMilestonesHeight,
             milestonesWidth = yMilestonesWidth,
             milestonesColor = yMilestonesColor,
             matrixColor = yMatrixColor,
             axisColor = yAxisColor,
-            nativePaint = nativePaint,
         )
 
         dataDrawing(
-            xMilestonesCounter = xAxisMilestonesCounter,
+            xMilestonesCounter = xMilestonesCounter,
             xStep = xStep,
             initialXValue = initialXValue,
-            yMilestonesCounter = yAxisMilestonesCounter,
+            yMilestonesCounter = yMilestonesCounter,
             yStep = yStep,
             initialYValue = initialYValue,
             endDrawingWidth = endDrawingWidth,
@@ -146,20 +161,7 @@ fun Graph(
 
 }
 
-private fun getTextSize(
-    nativePaint: Paint,
-    textSizePx: Float,
-    maxValue: Int,
-): Pair<Float, Float> {
-    var xTextHeight = 0f
-    var xTextWidth = 0f
-    nativePaint.withTextSize(textSizePx) {
-        xTextHeight = nativePaint.fontMetrics.descent - nativePaint.fontMetrics.ascent
-        xTextWidth = nativePaint.measureText(maxValue.toString())
-    }
-    return Pair(xTextHeight, xTextWidth)
-}
-
+@OptIn(ExperimentalTextApi::class)
 private fun DrawScope.xAxisDrawing(
     milestonesCounter: Int,
     initialValue: Int,
@@ -168,36 +170,38 @@ private fun DrawScope.xAxisDrawing(
     startHeight: Float,
     endWidth: Float,
     endHeight: Float,
-    textSize: TextUnit,
-    textColor: Color,
+    textMeasurer: TextMeasurer,
+    textStyle: TextStyle,
     milestonesHeight: Dp,
     milestonesWidth: Dp,
     milestonesColor: Color,
     matrixColor: Color,
     axisColor: Color,
-    nativePaint: Paint,
 ) {
 
     val width = endWidth - startWidth
 
-    // xAxisMilestonesCounter - 1 in order to remove last milestone space to the right
+    // milestonesCounter - 1 in order to remove last milestone space to the right
     val spaceBetweenMilestones = width / (milestonesCounter - 1)
 
     for (i in 0 until milestonesCounter) {
         val currentWidth = startWidth + i * spaceBetweenMilestones
         val milestoneText = (initialValue + i * step).toInt().toString()
-        val textWidth = nativePaint.measureText(milestoneText)
 
-        nativePaint.withColor(textColor) { paint ->
-            paint.withTextSize(textSize.toPx()) {
-                drawContext.canvas.nativeCanvas.drawText(
-                    milestoneText,
-                    currentWidth - textWidth / 2,
-                    size.height,
-                    it,
-                )
-            }
-        }
+        val textMeasuredSize = textMeasurer.measure(
+            text = milestoneText,
+            style = textStyle,
+        ).size
+
+        drawText(
+            textMeasurer = textMeasurer,
+            text = milestoneText,
+            style = textStyle,
+            topLeft = Offset(
+                x = currentWidth - textMeasuredSize.width / 2,
+                y = size.height - textMeasuredSize.height
+            )
+        )
 
         val milestonesWidthPx = milestonesWidth.toPx()
         val milestonesHeightPx = milestonesHeight.toPx()
@@ -228,6 +232,7 @@ private fun DrawScope.xAxisDrawing(
     )
 }
 
+@OptIn(ExperimentalTextApi::class)
 private fun DrawScope.yAxisDrawing(
     milestonesCounter: Int,
     initialValue: Int,
@@ -236,36 +241,31 @@ private fun DrawScope.yAxisDrawing(
     startHeight: Float,
     endWidth: Float,
     endHeight: Float,
-    textSize: TextUnit,
-    textColor: Color,
+    textMeasurer: TextMeasurer,
+    measuredTextSize: IntSize,
+    textStyle: TextStyle,
     milestonesHeight: Dp,
     milestonesWidth: Dp,
     milestonesColor: Color,
     matrixColor: Color,
     axisColor: Color,
-    nativePaint: Paint,
 ) {
     val height = endHeight - startHeight
 
     val spaceBetweenMilestones = height / (milestonesCounter - 1)
 
     for (i in 0 until milestonesCounter) {
-        val milestoneText = (initialValue + i * step).toInt().toString()
-
-        val textHeight = nativePaint.getTextHeight(milestoneText)
-
         val currentHeight = endHeight - i * spaceBetweenMilestones
 
-        nativePaint.withColor(textColor) { paint ->
-            paint.withTextSize(textSize.toPx()) {
-                drawContext.canvas.nativeCanvas.drawText(
-                    "${(initialValue + i * step).toInt()}",
-                    0f,
-                    currentHeight + textHeight / 2,
-                    it
-                )
-            }
-        }
+        drawText(
+            textMeasurer = textMeasurer,
+            text = "${(initialValue + i * step).toInt()}",
+            style = textStyle,
+            topLeft = Offset(
+                x = 0f,
+                y = currentHeight - measuredTextSize.height / 2
+            ),
+        )
 
         val milestonesWidthPx = milestonesWidth.toPx()
         val milestonesHeightPx = milestonesHeight.toPx()
