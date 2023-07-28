@@ -3,7 +3,6 @@ package com.vep1940.compose.kit.graph
 import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.MaterialTheme
@@ -24,6 +23,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.vep1940.compose.kit.util.drawInColor
+import com.vep1940.compose.kit.util.drawInTextSize
 import com.vep1940.compose.kit.util.getTextHeight
 import kotlin.math.ceil
 import android.graphics.Paint as NativePaint
@@ -47,87 +47,104 @@ fun Graph(
     xStep: Float,
     yStep: Float,
     modifier: Modifier = Modifier,
-    textSize: TextUnit = 8.sp,
-    textColor: Color = Color.Black,
+    xTextSize: TextUnit = 8.sp,
+    xTextColor: Color = Color.Black,
+    xMilestonesColor: Color = Color.Black,
+    xAxisColor: Color = Color.Black,
+    yTextSize: TextUnit = 8.sp,
+    yTextColor: Color = Color.Black,
+    yMilestonesColor: Color = Color.Black,
+    yAxisColor: Color = Color.Black,
     pointsRadius: Dp = 4.dp,
     pointsColor: Color = Color.Black,
     lineWidth: Dp = 1.dp,
     lineColor: Color = Color.Black,
     areaColor: List<Color> = listOf(Color.Transparent, Color.Transparent)
 ) {
-    Box(modifier.padding(all = 2.dp)) {
-        Canvas(modifier = Modifier.fillMaxSize()) {
+    Canvas(
+        modifier = modifier
+            .fillMaxSize()
+    ) {
 
-            val composePaint = AndroidPaint()
-            val nativePaint = NativePaint().apply {
-                this.textSize = textSize.toPx()
-            }
+        val composePaint = AndroidPaint()
+        val nativePaint = NativePaint()
 
-            val xMax = points.maxOf { it.xValue }
-            val yMax = points.maxOf { it.yValue }
+        val xMax = points.maxOf { it.xValue }
+        val yMax = points.maxOf { it.yValue }
 
-            // maxValue - initialValue plus 1 in order to adding the initialValue to the difference
-            val xAxisMilestonesCounter = (ceil((xMax - initialXValue) / xStep) + 1).toInt()
-            val yAxisMilestonesCounter = (ceil((yMax - initialYValue) / yStep) + 1).toInt()
+        // maxValue - initialValue plus 1 in order to adding the initialValue to the difference
+        val xAxisMilestonesCounter = (ceil((xMax - initialXValue) / xStep) + 1).toInt()
+        val yAxisMilestonesCounter = (ceil((yMax - initialYValue) / yStep) + 1).toInt()
 
-            val startDrawingWidth = Constants.xAxisStartPadding.toPx()
-            val endDrawingWidth = size.width - Constants.xAxisEndPadding.toPx()
-            val startDrawingHeight = Constants.yAxisStartPadding.toPx()
-            val endDrawingHeight = size.height - Constants.yAxisEndPadding.toPx()
+        val startDrawingWidth = Constants.xAxisStartPadding.toPx()
+        val endDrawingWidth = size.width - Constants.xAxisEndPadding.toPx()
+        val startDrawingHeight = Constants.yAxisStartPadding.toPx()
+        val endDrawingHeight = size.height - Constants.yAxisEndPadding.toPx()
 
-            xAxisDrawing(
-                xAxisMilestonesCounter = xAxisMilestonesCounter,
-                initialValue = initialXValue,
-                step = xStep,
-                endHeight = endDrawingHeight,
-                startWidth = startDrawingWidth,
-                endWidth = endDrawingWidth,
-                nativePaint = nativePaint,
-                composePaint = composePaint,
-            )
+        xAxisDrawing(
+            milestonesCounter = xAxisMilestonesCounter,
+            initialValue = initialXValue,
+            step = xStep,
+            endHeight = endDrawingHeight,
+            startWidth = startDrawingWidth,
+            endWidth = endDrawingWidth,
+            textSize = xTextSize,
+            textColor = xTextColor,
+            milestonesColor = xMilestonesColor,
+            axisColor = xAxisColor,
+            nativePaint = nativePaint,
+            composePaint = composePaint,
+        )
 
-            yAxisDrawing(
-                yAxisMilestonesCounter = yAxisMilestonesCounter,
-                initialValue = initialYValue,
-                step = yStep,
-                startWidth = startDrawingWidth,
-                startHeight = startDrawingHeight,
-                endHeight = endDrawingHeight,
-                nativePaint = nativePaint,
-                composePaint = composePaint,
-            )
+        yAxisDrawing(
+            yAxisMilestonesCounter = yAxisMilestonesCounter,
+            initialValue = initialYValue,
+            step = yStep,
+            startWidth = startDrawingWidth,
+            startHeight = startDrawingHeight,
+            endHeight = endDrawingHeight,
+            textSize = yTextSize,
+            textColor = yTextColor,
+            milestonesColor = yMilestonesColor,
+            axisColor = yAxisColor,
+            nativePaint = nativePaint,
+            composePaint = composePaint,
+        )
 
-            dataDrawing(
-                xAxisMilestonesCounter = xAxisMilestonesCounter,
-                xStep = xStep,
-                initialXValue = initialXValue,
-                yAxisMilestonesCounter = yAxisMilestonesCounter,
-                yStep = yStep,
-                initialYValue = initialYValue,
-                endDrawingWidth = endDrawingWidth,
-                startDrawingWidth = startDrawingWidth,
-                endDrawingHeight = endDrawingHeight,
-                startDrawingHeight = startDrawingHeight,
-                points = points,
-                pointsRadius = pointsRadius,
-                pointsColor = pointsColor,
-                lineWidth = lineWidth,
-                lineColor = lineColor,
-                areaColor = areaColor,
-                composePaint = composePaint,
-            )
-        }
+        dataDrawing(
+            xAxisMilestonesCounter = xAxisMilestonesCounter,
+            xStep = xStep,
+            initialXValue = initialXValue,
+            yAxisMilestonesCounter = yAxisMilestonesCounter,
+            yStep = yStep,
+            initialYValue = initialYValue,
+            endDrawingWidth = endDrawingWidth,
+            startDrawingWidth = startDrawingWidth,
+            endDrawingHeight = endDrawingHeight,
+            startDrawingHeight = startDrawingHeight,
+            points = points,
+            pointsRadius = pointsRadius,
+            pointsColor = pointsColor,
+            lineWidth = lineWidth,
+            lineColor = lineColor,
+            areaColor = areaColor,
+            composePaint = composePaint,
+        )
     }
 
 }
 
 private fun DrawScope.xAxisDrawing(
-    xAxisMilestonesCounter: Int,
+    milestonesCounter: Int,
     initialValue: Int,
     step: Float,
     endHeight: Float,
     startWidth: Float,
     endWidth: Float,
+    textSize: TextUnit,
+    textColor: Color,
+    milestonesColor: Color,
+    axisColor: Color,
     nativePaint: Paint,
     composePaint: AndroidPaint,
 ) {
@@ -135,31 +152,40 @@ private fun DrawScope.xAxisDrawing(
     val width = endWidth - startWidth
 
     // xAxisMilestonesCounter - 1 in order to remove last milestone space to the right
-    val spaceBetweenMilestones = width / (xAxisMilestonesCounter - 1)
+    val spaceBetweenMilestones = width / (milestonesCounter - 1)
 
-    for (i in 0 until xAxisMilestonesCounter) {
+    for (i in 0 until milestonesCounter) {
         val currentWidth = startWidth + i * spaceBetweenMilestones
         val milestoneText = (initialValue + i * step).toInt().toString()
         val textWidth = nativePaint.measureText(milestoneText)
 
-        drawContext.canvas.nativeCanvas.drawText(
-            milestoneText,
-            currentWidth - textWidth / 2,
-            size.height,
-            nativePaint
-        )
-        drawContext.canvas.drawLine(
-            Offset(currentWidth, endHeight),
-            Offset(currentWidth, endHeight + Constants.milestonesMarkSize.toPx()),
-            composePaint,
-        )
+        nativePaint.drawInColor(textColor) { paint ->
+            paint.drawInTextSize(textSize.toPx()) {
+                drawContext.canvas.nativeCanvas.drawText(
+                    milestoneText,
+                    currentWidth - textWidth / 2,
+                    size.height,
+                    it,
+                )
+            }
+        }
+
+        composePaint.drawInColor(milestonesColor) { paint ->
+            drawContext.canvas.drawLine(
+                Offset(currentWidth, endHeight),
+                Offset(currentWidth, endHeight + Constants.milestonesMarkSize.toPx()),
+                paint,
+            )
+        }
     }
 
-    drawContext.canvas.drawLine(
-        Offset(startWidth, endHeight),
-        Offset(endWidth, endHeight),
-        composePaint,
-    )
+    composePaint.drawInColor(axisColor) { paint ->
+        drawContext.canvas.drawLine(
+            Offset(startWidth, endHeight),
+            Offset(endWidth, endHeight),
+            paint,
+        )
+    }
 }
 
 private fun DrawScope.yAxisDrawing(
@@ -169,6 +195,10 @@ private fun DrawScope.yAxisDrawing(
     startWidth: Float,
     startHeight: Float,
     endHeight: Float,
+    textSize: TextUnit,
+    textColor: Color,
+    milestonesColor: Color,
+    axisColor: Color,
     nativePaint: Paint,
     composePaint: AndroidPaint,
 ) {
@@ -183,24 +213,33 @@ private fun DrawScope.yAxisDrawing(
 
         val currentHeight = endHeight - i * spaceBetweenMilestones
 
-        drawContext.canvas.nativeCanvas.drawText(
-            "${(initialValue + i * step).toInt()}",
-            0f,
-            currentHeight + textHeight / 2,
-            nativePaint
-        )
-        drawContext.canvas.drawLine(
-            Offset(startWidth, currentHeight),
-            Offset(startWidth - Constants.milestonesMarkSize.toPx(), currentHeight),
-            composePaint,
-        )
+        nativePaint.drawInColor(textColor) { paint ->
+            paint.drawInTextSize(textSize.toPx()) {
+                drawContext.canvas.nativeCanvas.drawText(
+                    "${(initialValue + i * step).toInt()}",
+                    0f,
+                    currentHeight + textHeight / 2,
+                    it
+                )
+            }
+        }
+
+        composePaint.drawInColor(milestonesColor) { paint ->
+            drawContext.canvas.drawLine(
+                Offset(startWidth, currentHeight),
+                Offset(startWidth - Constants.milestonesMarkSize.toPx(), currentHeight),
+                paint,
+            )
+        }
     }
 
-    drawContext.canvas.drawLine(
-        Offset(Constants.xAxisStartPadding.toPx(), startHeight),
-        Offset(Constants.xAxisStartPadding.toPx(), endHeight),
-        composePaint,
-    )
+    composePaint.drawInColor(axisColor) { paint ->
+        drawContext.canvas.drawLine(
+            Offset(Constants.xAxisStartPadding.toPx(), startHeight),
+            Offset(Constants.xAxisStartPadding.toPx(), endHeight),
+            paint,
+        )
+    }
 }
 
 private fun DrawScope.dataDrawing(
@@ -311,8 +350,14 @@ fun GraphPreview() {
             initialYValue = 10,
             xStep = 1f,
             yStep = 10f,
-            textSize = 8.sp,
-            textColor = Color.Red,
+            xTextSize = 4.sp,
+            xTextColor = Color.Magenta,
+            xMilestonesColor = Color.Green,
+            xAxisColor = Color.Red,
+            yTextSize = 8.sp,
+            yTextColor = Color.Cyan,
+            yMilestonesColor = Color.Blue,
+            yAxisColor = Color.Green,
             pointsRadius = 4.dp,
             pointsColor = Color.Blue,
             lineWidth = 2.dp,
@@ -320,7 +365,8 @@ fun GraphPreview() {
             areaColor = listOf(Color.Cyan, Color.Yellow),
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = Color.White),
+                .background(color = Color.DarkGray)
+                .padding(all = 2.dp),
         )
     }
 }
