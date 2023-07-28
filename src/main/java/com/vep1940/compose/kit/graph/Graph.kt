@@ -42,10 +42,12 @@ fun Graph(
     modifier: Modifier = Modifier,
     xTextSize: TextUnit = 8.sp,
     xTextColor: Color = Color.Black,
+    xTextPadding: Dp = 0.dp,
     xMilestonesColor: Color = Color.Black,
     xAxisColor: Color = Color.Black,
     yTextSize: TextUnit = 8.sp,
     yTextColor: Color = Color.Black,
+    yTextPadding: Dp = 2.dp,
     yMilestonesColor: Color = Color.Black,
     yAxisColor: Color = Color.Black,
     pointsRadius: Dp = 4.dp,
@@ -74,12 +76,16 @@ fun Graph(
 
         val pointsRadiusPx = pointsRadius.toPx()
 
-        val startDrawingWidth =
-            yTextWidth + maxOf(Constants.milestonesMarkSize.toPx(), pointsRadiusPx)
+        val startDrawingWidth = yTextWidth + maxOf(
+            Constants.milestonesMarkSize.toPx(),
+            pointsRadiusPx
+        ) + yTextPadding.toPx()
         val endDrawingWidth = size.width - maxOf((xTextWidth / 2), pointsRadiusPx)
         val startDrawingHeight = maxOf(yTextHeight / 2, pointsRadiusPx)
-        val endDrawingHeight =
-            size.height - (xTextHeight + maxOf(Constants.milestonesMarkSize.toPx(), pointsRadiusPx))
+        val endDrawingHeight = size.height - (xTextHeight + maxOf(
+            Constants.milestonesMarkSize.toPx(),
+            pointsRadiusPx
+        ) + xTextPadding.toPx())
 
         xAxisDrawing(
             milestonesCounter = xAxisMilestonesCounter,
@@ -366,10 +372,12 @@ fun GraphPreview() {
             yStep = 10f,
             xTextSize = 4.sp,
             xTextColor = Color.Magenta,
+            xTextPadding = (-1).dp,
             xMilestonesColor = Color.Green,
             xAxisColor = Color.Red,
             yTextSize = 8.sp,
             yTextColor = Color.Cyan,
+            yTextPadding = 1.dp,
             yMilestonesColor = Color.Blue,
             yAxisColor = Color.Green,
             pointsRadius = 4.dp,
