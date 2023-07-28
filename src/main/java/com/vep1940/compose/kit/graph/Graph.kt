@@ -395,8 +395,8 @@ fun GraphPreview() {
     MaterialTheme {
         Graph(
             points = PreviewValues.points,
-            step = 10f,
-            xTextSize = 4.sp,
+            step = 4.5f,
+            xTextSize = 10.sp,
             xTextColor = Color.Magenta,
             xTextPadding = (-1).dp,
             xMilestonesHeight = 4.dp,
@@ -442,15 +442,16 @@ fun GraphBasePreview() {
 private object PreviewValues {
     val points by lazy {
         listOf(
-            GraphData("1", 100),
-            GraphData("2", 15),
-            GraphData("3", 32),
-            GraphData("4", 10),
-            GraphData("5", 67),
-            GraphData("6", 53),
-            GraphData("7", 87),
-            GraphData("8", 100),
-            GraphData("9", 29),
+            GraphData("1", 100f),
+            GraphData("2", 15f),
+            GraphData("3", 32f),
+            GraphData("4", 10f),
+            GraphData("5", 67f),
+            GraphData("6", 53f),
+            GraphData("7", 87f),
+            GraphData("8", 100f),
+            GraphData("9", 29f),
+            GraphData("9", 29.3f),
         )
     }
 }
