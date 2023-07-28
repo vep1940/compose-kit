@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.AndroidPaint
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -241,11 +242,6 @@ private fun DrawScope.dataDrawing(
         }
 
         with(drawContext.canvas) {
-            drawCircle(
-                center = p0,
-                radius = pointsRadius,
-                paint = composePaint,
-            )
             bezierPoints?.let { bezierPoints ->
                 val path = Path().apply {
                     reset()
@@ -264,7 +260,29 @@ private fun DrawScope.dataDrawing(
                         cap = StrokeCap.Round
                     )
                 )
+
+                path.apply {
+                    lineTo(bezierPoints.p3.x, endDrawingHeight)
+                    lineTo(p0.x, endDrawingHeight)
+                    close()
+                }
+
+                drawPath(
+                    path,
+                    brush = Brush.verticalGradient(
+                        listOf(
+                            Color.Cyan,
+                            Color.Yellow,
+                        ),
+                        endY = endDrawingHeight
+                    ),
+                )
             }
+            drawCircle(
+                center = p0,
+                radius = pointsRadius,
+                paint = composePaint,
+            )
         }
     }
 }
