@@ -19,9 +19,11 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.vep1940.compose.kit.util.drawInColor
 import com.vep1940.compose.kit.util.getTextHeight
 import kotlin.math.ceil
 import android.graphics.Paint as NativePaint
@@ -46,7 +48,12 @@ fun Graph(
     yStep: Float,
     modifier: Modifier = Modifier,
     textSize: TextUnit = 8.sp,
-    pointsRadius: Float = 8f,
+    textColor: Color = Color.Black,
+    pointsRadius: Dp = 4.dp,
+    pointsColor: Color = Color.Black,
+    lineWidth: Dp = 1.dp,
+    lineColor: Color = Color.Black,
+    areaColor: List<Color> = listOf(Color.Transparent, Color.Transparent)
 ) {
     Box(modifier.padding(all = 2.dp)) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -103,6 +110,10 @@ fun Graph(
                 startDrawingHeight = startDrawingHeight,
                 points = points,
                 pointsRadius = pointsRadius,
+                pointsColor = pointsColor,
+                lineWidth = lineWidth,
+                lineColor = lineColor,
+                areaColor = areaColor,
                 composePaint = composePaint,
             )
         }
@@ -204,8 +215,12 @@ private fun DrawScope.dataDrawing(
     endDrawingHeight: Float,
     startDrawingHeight: Float,
     points: List<GraphData<Int>>,
-    pointsRadius: Float,
-    composePaint: AndroidPaint
+    pointsRadius: Dp,
+    pointsColor: Color,
+    lineWidth: Dp,
+    lineColor: Color,
+    areaColor: List<Color>,
+    composePaint: AndroidPaint,
 ) {
     val xMaxMilestone = (xAxisMilestonesCounter - 1) * xStep + initialXValue
     val yMaxMilestone = (yAxisMilestonesCounter - 1) * yStep + initialYValue
@@ -252,11 +267,12 @@ private fun DrawScope.dataDrawing(
                         bezierPoints.p3.x, bezierPoints.p3.y,
                     )
                 }
+
                 drawPath(
                     path,
-                    color = Color.Black,
+                    color = lineColor,
                     style = Stroke(
-                        width = 5f,
+                        width = lineWidth.toPx(),
                         cap = StrokeCap.Round
                     )
                 )
@@ -268,21 +284,18 @@ private fun DrawScope.dataDrawing(
                 }
 
                 drawPath(
-                    path,
-                    brush = Brush.verticalGradient(
-                        listOf(
-                            Color.Cyan,
-                            Color.Yellow,
-                        ),
-                        endY = endDrawingHeight
-                    ),
+                    path = path,
+                    brush = Brush.verticalGradient(areaColor),
                 )
             }
-            drawCircle(
-                center = p0,
-                radius = pointsRadius,
-                paint = composePaint,
-            )
+
+            composePaint.drawInColor(pointsColor) { composePaint ->
+                drawCircle(
+                    center = p0,
+                    radius = pointsRadius.toPx(),
+                    paint = composePaint,
+                )
+            }
         }
     }
 }
@@ -298,9 +311,34 @@ fun GraphPreview() {
             initialYValue = 10,
             xStep = 1f,
             yStep = 10f,
+            textSize = 8.sp,
+            textColor = Color.Red,
+            pointsRadius = 4.dp,
+            pointsColor = Color.Blue,
+            lineWidth = 2.dp,
+            lineColor = Color.Red,
+            areaColor = listOf(Color.Cyan, Color.Yellow),
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = Color.White)
+                .background(color = Color.White),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun GraphBasePreview() {
+
+    MaterialTheme {
+        Graph(
+            points = PreviewValues.points,
+            initialXValue = 1,
+            initialYValue = 10,
+            xStep = 1f,
+            yStep = 10f,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = Color.White),
         )
     }
 }
