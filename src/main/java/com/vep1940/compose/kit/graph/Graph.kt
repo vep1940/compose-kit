@@ -42,7 +42,7 @@ fun Graph(
     yStep: Float,
     modifier: Modifier = Modifier,
     textSize: TextUnit = 8.sp,
-    pointsRadius: Float = 10f,
+    pointsRadius: Float = 8f,
 ) {
     Box(modifier.padding(all = 2.dp)) {
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -52,13 +52,20 @@ fun Graph(
                 this.textSize = textSize.toPx()
             }
 
+            val xMax = points.maxOf { it.xValue }
+            val yMax = points.maxOf { it.yValue }
+
+            // maxValue - initialValue plus 1 in order to adding the initialValue to the difference
+            val xAxisMilestonesCounter = (ceil((xMax - initialXValue) / xStep) + 1).toInt()
+            val yAxisMilestonesCounter = (ceil((yMax - initialYValue) / yStep) + 1).toInt()
+
             val startDrawingWidth = Constants.xAxisStartPadding.toPx()
             val endDrawingWidth = size.width - Constants.xAxisEndPadding.toPx()
             val startDrawingHeight = Constants.yAxisStartPadding.toPx()
             val endDrawingHeight = size.height - Constants.yAxisEndPadding.toPx()
 
             xAxisDrawing(
-                points = points,
+                xAxisMilestonesCounter = xAxisMilestonesCounter,
                 initialValue = initialXValue,
                 step = xStep,
                 endHeight = endDrawingHeight,
@@ -69,7 +76,7 @@ fun Graph(
             )
 
             yAxisDrawing(
-                points = points,
+                yAxisMilestonesCounter = yAxisMilestonesCounter,
                 initialValue = initialYValue,
                 step = yStep,
                 startWidth = startDrawingWidth,
@@ -79,13 +86,28 @@ fun Graph(
                 composePaint = composePaint,
             )
 
+            dataDrawing(
+                xAxisMilestonesCounter = xAxisMilestonesCounter,
+                xStep = xStep,
+                initialXValue = initialXValue,
+                yAxisMilestonesCounter = yAxisMilestonesCounter,
+                yStep = yStep,
+                initialYValue = initialYValue,
+                endDrawingWidth = endDrawingWidth,
+                startDrawingWidth = startDrawingWidth,
+                endDrawingHeight = endDrawingHeight,
+                startDrawingHeight = startDrawingHeight,
+                points = points,
+                pointsRadius = pointsRadius,
+                composePaint = composePaint,
+            )
         }
     }
 
 }
 
 private fun DrawScope.xAxisDrawing(
-    points: List<GraphData<Int>>,
+    xAxisMilestonesCounter: Int,
     initialValue: Int,
     step: Float,
     endHeight: Float,
@@ -96,11 +118,6 @@ private fun DrawScope.xAxisDrawing(
 ) {
 
     val width = endWidth - startWidth
-
-    val xMax = points.maxOf { it.xValue }
-
-    // xMax - initialXValue plus 1 in order to adding the initialValue to the difference
-    val xAxisMilestonesCounter = (ceil((xMax - initialValue) / step) + 1).toInt()
 
     // xAxisMilestonesCounter - 1 in order to remove last milestone space to the right
     val spaceBetweenMilestones = width / (xAxisMilestonesCounter - 1)
@@ -131,7 +148,7 @@ private fun DrawScope.xAxisDrawing(
 }
 
 private fun DrawScope.yAxisDrawing(
-    points: List<GraphData<Int>>,
+    yAxisMilestonesCounter: Int,
     initialValue: Int,
     step: Float,
     startWidth: Float,
@@ -141,10 +158,6 @@ private fun DrawScope.yAxisDrawing(
     composePaint: AndroidPaint,
 ) {
     val height = endHeight - startHeight
-
-    val yMax = points.maxOf { it.yValue }
-
-    val yAxisMilestonesCounter = (ceil((yMax - initialValue) / step) + 1).toInt()
 
     val spaceBetweenMilestones = height / (yAxisMilestonesCounter - 1)
 
@@ -175,6 +188,58 @@ private fun DrawScope.yAxisDrawing(
     )
 }
 
+private fun DrawScope.dataDrawing(
+    xAxisMilestonesCounter: Int,
+    xStep: Float,
+    initialXValue: Int,
+    yAxisMilestonesCounter: Int,
+    yStep: Float,
+    initialYValue: Int,
+    endDrawingWidth: Float,
+    startDrawingWidth: Float,
+    endDrawingHeight: Float,
+    startDrawingHeight: Float,
+    points: List<GraphData<Int>>,
+    pointsRadius: Float,
+    composePaint: AndroidPaint
+) {
+    val xMaxMilestone = (xAxisMilestonesCounter - 1) * xStep + initialXValue
+    val yMaxMilestone = (yAxisMilestonesCounter - 1) * yStep + initialYValue
+
+    val xPxPerUnit = (endDrawingWidth - startDrawingWidth) / (xMaxMilestone - initialXValue)
+    val yPxPerUnit = (endDrawingHeight - startDrawingHeight) / (yMaxMilestone - initialYValue)
+
+    for (i in points.indices) {
+
+        val p1 = Offset(
+            x = (points[i].xValue - initialXValue) * xPxPerUnit + startDrawingWidth,
+            y = endDrawingHeight - (points[i].yValue - initialYValue) * yPxPerUnit,
+        )
+        val p2 = points.getOrNull(i + 1)?.let { nextPoint ->
+            Offset(
+                x = (nextPoint.xValue - initialXValue) * xPxPerUnit + startDrawingWidth,
+                y = endDrawingHeight - (nextPoint.yValue - initialYValue) * yPxPerUnit,
+            )
+        }
+
+        with(drawContext.canvas) {
+            drawCircle(
+                center = p1,
+                radius = pointsRadius,
+                paint = composePaint,
+            )
+            p2?.let { nextPoint ->
+                drawLine(
+                    p1 = p1,
+                    p2 = nextPoint,
+                    paint = composePaint,
+                )
+            }
+        }
+
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun GraphPreview() {
@@ -196,8 +261,8 @@ fun GraphPreview() {
 private object PreviewValues {
     val points by lazy {
         listOf(
-            GraphData((1), 2),
-            GraphData((2), 5),
+            GraphData((1), 12),
+            GraphData((2), 15),
             GraphData((3), 32),
             GraphData((4), 12),
             GraphData((5), 67),
@@ -207,13 +272,13 @@ private object PreviewValues {
             GraphData((9), 29),
             GraphData((10), 47),
             GraphData((11), 23),
-            GraphData((12), 66),
+            GraphData((12), 10),
             GraphData((13), 72),
             GraphData((14), 20),
             GraphData((15), 35),
-            GraphData((16), 6),
-            GraphData((17), 7),
-            GraphData((18), 0),
+            GraphData((16), 16),
+            GraphData((17), 17),
+            GraphData((18), 10),
             GraphData((19), 12),
             GraphData((20), 38),
             GraphData((21), 26),
