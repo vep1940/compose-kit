@@ -4,7 +4,6 @@ import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -22,19 +21,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.vep1940.compose.kit.util.drawInColor
-import com.vep1940.compose.kit.util.drawInTextSize
 import com.vep1940.compose.kit.util.getTextHeight
+import com.vep1940.compose.kit.util.withColor
+import com.vep1940.compose.kit.util.withTextSize
 import kotlin.math.ceil
 import android.graphics.Paint as NativePaint
 
 private object Constants {
-    val xAxisEndPadding = 8.dp
-    val xAxisStartPadding = 24.dp
-
-    val yAxisEndPadding = 8.dp
-    val yAxisStartPadding = 8.dp
-
     val milestonesMarkSize = 1.dp
 }
 
@@ -76,10 +69,17 @@ fun Graph(
         val xAxisMilestonesCounter = (ceil((xMax - initialXValue) / xStep) + 1).toInt()
         val yAxisMilestonesCounter = (ceil((yMax - initialYValue) / yStep) + 1).toInt()
 
-        val startDrawingWidth = Constants.xAxisStartPadding.toPx()
-        val endDrawingWidth = size.width - Constants.xAxisEndPadding.toPx()
-        val startDrawingHeight = Constants.yAxisStartPadding.toPx()
-        val endDrawingHeight = size.height - Constants.yAxisEndPadding.toPx()
+        val (xTextHeight, xTextWidth) = getTextSize(nativePaint, xTextSize.toPx(), xMax)
+        val (yTextHeight, yTextWidth) = getTextSize(nativePaint, yTextSize.toPx(), yMax)
+
+        val pointsRadiusPx = pointsRadius.toPx()
+
+        val startDrawingWidth =
+            yTextWidth + maxOf(Constants.milestonesMarkSize.toPx(), pointsRadiusPx)
+        val endDrawingWidth = size.width - maxOf((xTextWidth / 2), pointsRadiusPx)
+        val startDrawingHeight = maxOf(yTextHeight / 2, pointsRadiusPx)
+        val endDrawingHeight =
+            size.height - (xTextHeight + maxOf(Constants.milestonesMarkSize.toPx(), pointsRadiusPx))
 
         xAxisDrawing(
             milestonesCounter = xAxisMilestonesCounter,
@@ -134,6 +134,20 @@ fun Graph(
 
 }
 
+private fun getTextSize(
+    nativePaint: Paint,
+    textSizePx: Float,
+    maxValue: Int,
+): Pair<Float, Float> {
+    var xTextHeight = 0f
+    var xTextWidth = 0f
+    nativePaint.withTextSize(textSizePx) {
+        xTextHeight = nativePaint.fontMetrics.descent - nativePaint.fontMetrics.ascent
+        xTextWidth = nativePaint.measureText(maxValue.toString())
+    }
+    return Pair(xTextHeight, xTextWidth)
+}
+
 private fun DrawScope.xAxisDrawing(
     milestonesCounter: Int,
     initialValue: Int,
@@ -159,8 +173,8 @@ private fun DrawScope.xAxisDrawing(
         val milestoneText = (initialValue + i * step).toInt().toString()
         val textWidth = nativePaint.measureText(milestoneText)
 
-        nativePaint.drawInColor(textColor) { paint ->
-            paint.drawInTextSize(textSize.toPx()) {
+        nativePaint.withColor(textColor) { paint ->
+            paint.withTextSize(textSize.toPx()) {
                 drawContext.canvas.nativeCanvas.drawText(
                     milestoneText,
                     currentWidth - textWidth / 2,
@@ -170,7 +184,7 @@ private fun DrawScope.xAxisDrawing(
             }
         }
 
-        composePaint.drawInColor(milestonesColor) { paint ->
+        composePaint.withColor(milestonesColor) { paint ->
             drawContext.canvas.drawLine(
                 Offset(currentWidth, endHeight),
                 Offset(currentWidth, endHeight + Constants.milestonesMarkSize.toPx()),
@@ -179,7 +193,7 @@ private fun DrawScope.xAxisDrawing(
         }
     }
 
-    composePaint.drawInColor(axisColor) { paint ->
+    composePaint.withColor(axisColor) { paint ->
         drawContext.canvas.drawLine(
             Offset(startWidth, endHeight),
             Offset(endWidth, endHeight),
@@ -213,8 +227,8 @@ private fun DrawScope.yAxisDrawing(
 
         val currentHeight = endHeight - i * spaceBetweenMilestones
 
-        nativePaint.drawInColor(textColor) { paint ->
-            paint.drawInTextSize(textSize.toPx()) {
+        nativePaint.withColor(textColor) { paint ->
+            paint.withTextSize(textSize.toPx()) {
                 drawContext.canvas.nativeCanvas.drawText(
                     "${(initialValue + i * step).toInt()}",
                     0f,
@@ -224,7 +238,7 @@ private fun DrawScope.yAxisDrawing(
             }
         }
 
-        composePaint.drawInColor(milestonesColor) { paint ->
+        composePaint.withColor(milestonesColor) { paint ->
             drawContext.canvas.drawLine(
                 Offset(startWidth, currentHeight),
                 Offset(startWidth - Constants.milestonesMarkSize.toPx(), currentHeight),
@@ -233,10 +247,10 @@ private fun DrawScope.yAxisDrawing(
         }
     }
 
-    composePaint.drawInColor(axisColor) { paint ->
+    composePaint.withColor(axisColor) { paint ->
         drawContext.canvas.drawLine(
-            Offset(Constants.xAxisStartPadding.toPx(), startHeight),
-            Offset(Constants.xAxisStartPadding.toPx(), endHeight),
+            Offset(startWidth, startHeight),
+            Offset(startWidth, endHeight),
             paint,
         )
     }
@@ -328,7 +342,7 @@ private fun DrawScope.dataDrawing(
                 )
             }
 
-            composePaint.drawInColor(pointsColor) { composePaint ->
+            composePaint.withColor(pointsColor) { composePaint ->
                 drawCircle(
                     center = p0,
                     radius = pointsRadius.toPx(),
@@ -365,8 +379,7 @@ fun GraphPreview() {
             areaColor = listOf(Color.Cyan, Color.Yellow),
             modifier = Modifier
                 .fillMaxSize()
-                .background(color = Color.DarkGray)
-                .padding(all = 2.dp),
+                .background(color = Color.DarkGray),
         )
     }
 }
@@ -392,37 +405,15 @@ fun GraphBasePreview() {
 private object PreviewValues {
     val points by lazy {
         listOf(
-            GraphData((1), 12),
+            GraphData((1), 100),
             GraphData((2), 15),
             GraphData((3), 32),
-            GraphData((4), 12),
+            GraphData((4), 10),
             GraphData((5), 67),
             GraphData((6), 53),
             GraphData((7), 87),
             GraphData((8), 100),
             GraphData((9), 29),
-            GraphData((10), 47),
-            GraphData((11), 23),
-            GraphData((12), 10),
-            GraphData((13), 72),
-            GraphData((14), 20),
-            GraphData((15), 35),
-            GraphData((16), 16),
-            GraphData((17), 17),
-            GraphData((18), 10),
-            GraphData((19), 12),
-            GraphData((20), 38),
-            GraphData((21), 26),
-            GraphData((22), 74),
-            GraphData((23), 101),
-            GraphData((24), 84),
-            GraphData((25), 94),
-            GraphData((26), 36),
-            GraphData((27), 75),
-            GraphData((28), 37),
-            GraphData((29), 86),
-            GraphData((30), 86),
-            GraphData((31), 99),
         )
     }
 }

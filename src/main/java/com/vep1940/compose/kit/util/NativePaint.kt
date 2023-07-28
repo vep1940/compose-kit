@@ -12,23 +12,23 @@ import androidx.core.graphics.red
 import kotlin.math.abs
 import androidx.compose.ui.graphics.Color as ComposeColor
 
-fun NativePaint.drawInColor(color: ComposeColor, content: (NativePaint) -> Unit) {
+fun NativePaint.withColor(color: ComposeColor, content: (NativePaint) -> Unit) {
     with(color.toArgb()) {
-        this@drawInColor.drawInColor(
+        this@withColor.withColor(
             color = Color.argb(this.alpha, this.red, this.green, this.blue),
             content = content
         )
     }
 }
 
-fun NativePaint.drawInColor(@ColorInt color: Int, content: (NativePaint) -> Unit) {
+fun NativePaint.withColor(@ColorInt color: Int, content: (NativePaint) -> Unit) {
     val colorSaved = this.color
     this.color = color
     content(this)
     this.color = colorSaved
 }
 
-fun NativePaint.drawInTextSize(textSize: Float, content: (NativePaint) -> Unit) {
+fun NativePaint.withTextSize(textSize: Float, content: (NativePaint) -> Unit) {
     val textSizeSaved = this.textSize
     this.textSize = textSize
     content(this)
