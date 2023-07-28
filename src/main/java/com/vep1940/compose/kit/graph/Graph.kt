@@ -26,16 +26,14 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.ceil
+import kotlin.math.floor
 
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun Graph(
-    points: List<GraphData<Int>>,
-    initialXValue: Int,
-    initialYValue: Int,
-    xStep: Float,
-    yStep: Float,
+fun <T : Number> Graph(
+    points: List<GraphData<T>>,
+    step: Float,
     modifier: Modifier = Modifier,
     xTextSize: TextUnit = 8.sp,
     xTextColor: Color = Color.Black,
@@ -65,13 +63,12 @@ fun Graph(
         modifier = modifier
             .fillMaxSize()
     ) {
-
-        val xMax = points.maxOf { it.xValue }
-        val yMax = points.maxOf { it.yValue }
+        val yMax = points.maxOf { it.yValue.toDouble() }
+        val initialYValue = floor(points.minOf { it.yValue.toDouble() } / step) * step
 
         // maxValue - initialValue plus 1 in order to add the initialValue to the difference
-        val xMilestonesCounter = (ceil((xMax - initialXValue) / xStep) + 1).toInt()
-        val yMilestonesCounter = (ceil((yMax - initialYValue) / yStep) + 1).toInt()
+        val xMilestonesCounter = points.size
+        val yMilestonesCounter = (ceil((yMax - initialYValue) / step) + 1).toInt()
 
         val xTextStyle = TextStyle(
             color = xTextColor,
@@ -82,32 +79,31 @@ fun Graph(
             fontSize = yTextSize,
         )
 
-        val xMeasuredTextSize = textMeasurer.measure(
-            text = ((xMilestonesCounter - 1) * xStep + initialXValue).toInt().toString(),
+        val lastXTextSize = textMeasurer.measure(
+            text = points.last().xValue,
             style = xTextStyle,
         ).size
-        val yMeasuredTextSize = textMeasurer.measure(
-            text = ((yMilestonesCounter - 1) * yStep + initialYValue).toInt().toString(),
+        val lastYTextSize = textMeasurer.measure(
+            text = ((yMilestonesCounter - 1) * step + initialYValue).toString(), // TODO - NUMBER OF DECIMALS ?
             style = yTextStyle,
         ).size
 
         val pointsRadiusPx = pointsRadius.toPx()
 
-        val startDrawingWidth = yMeasuredTextSize.width + maxOf(
+        val startDrawingWidth = lastYTextSize.width + maxOf(
             yMilestonesWidth.toPx(),
             pointsRadiusPx
         ) + yTextPadding.toPx()
-        val endDrawingWidth = size.width - maxOf((xMeasuredTextSize.width / 2f), pointsRadiusPx)
-        val startDrawingHeight = maxOf(yMeasuredTextSize.height / 2f, pointsRadiusPx)
-        val endDrawingHeight = size.height - (xMeasuredTextSize.height + maxOf(
+        val endDrawingWidth = size.width - maxOf((lastXTextSize.width / 2f), pointsRadiusPx)
+        val startDrawingHeight = maxOf(lastYTextSize.height / 2f, pointsRadiusPx)
+        val endDrawingHeight = size.height - (lastXTextSize.height + maxOf(
             xMilestonesHeight.toPx(),
             pointsRadiusPx
         ) + xTextPadding.toPx())
 
         xAxisDrawing(
+            xPoints = points.map { it.xValue },
             milestonesCounter = xMilestonesCounter,
-            initialValue = initialXValue,
-            step = xStep,
             startWidth = startDrawingWidth,
             startHeight = startDrawingHeight,
             endWidth = endDrawingWidth,
@@ -124,13 +120,13 @@ fun Graph(
         yAxisDrawing(
             milestonesCounter = yMilestonesCounter,
             initialValue = initialYValue,
-            step = yStep,
+            step = step,
             startWidth = startDrawingWidth,
             startHeight = startDrawingHeight,
             endWidth = endDrawingWidth,
             endHeight = endDrawingHeight,
             textMeasurer = textMeasurer,
-            measuredTextSize = yMeasuredTextSize,
+            measuredTextSize = lastYTextSize,
             textStyle = yTextStyle,
             milestonesHeight = yMilestonesHeight,
             milestonesWidth = yMilestonesWidth,
@@ -141,10 +137,8 @@ fun Graph(
 
         dataDrawing(
             xMilestonesCounter = xMilestonesCounter,
-            xStep = xStep,
-            initialXValue = initialXValue,
             yMilestonesCounter = yMilestonesCounter,
-            yStep = yStep,
+            yStep = step,
             initialYValue = initialYValue,
             endDrawingWidth = endDrawingWidth,
             startDrawingWidth = startDrawingWidth,
@@ -163,9 +157,8 @@ fun Graph(
 
 @OptIn(ExperimentalTextApi::class)
 private fun DrawScope.xAxisDrawing(
+    xPoints: List<String>,
     milestonesCounter: Int,
-    initialValue: Int,
-    step: Float,
     startWidth: Float,
     startHeight: Float,
     endWidth: Float,
@@ -186,7 +179,7 @@ private fun DrawScope.xAxisDrawing(
 
     for (i in 0 until milestonesCounter) {
         val currentWidth = startWidth + i * spaceBetweenMilestones
-        val milestoneText = (initialValue + i * step).toInt().toString()
+        val milestoneText = xPoints[i]
 
         val textMeasuredSize = textMeasurer.measure(
             text = milestoneText,
@@ -235,7 +228,7 @@ private fun DrawScope.xAxisDrawing(
 @OptIn(ExperimentalTextApi::class)
 private fun DrawScope.yAxisDrawing(
     milestonesCounter: Int,
-    initialValue: Int,
+    initialValue: Double,
     step: Float,
     startWidth: Float,
     startHeight: Float,
@@ -259,7 +252,7 @@ private fun DrawScope.yAxisDrawing(
 
         drawText(
             textMeasurer = textMeasurer,
-            text = "${(initialValue + i * step).toInt()}",
+            text = "${initialValue + i * step}", // TODO - NUMBER OF DECIMALS ?
             style = textStyle,
             topLeft = Offset(
                 x = 0f,
@@ -298,28 +291,25 @@ private fun DrawScope.yAxisDrawing(
 
 }
 
-private fun DrawScope.dataDrawing(
+private fun <T : Number> DrawScope.dataDrawing(
     xMilestonesCounter: Int,
-    xStep: Float,
-    initialXValue: Int,
     yMilestonesCounter: Int,
     yStep: Float,
-    initialYValue: Int,
+    initialYValue: Double,
     endDrawingWidth: Float,
     startDrawingWidth: Float,
     endDrawingHeight: Float,
     startDrawingHeight: Float,
-    points: List<GraphData<Int>>,
+    points: List<GraphData<T>>,
     pointsRadius: Dp,
     pointsColor: Color,
     lineWidth: Dp,
     lineColor: Color,
     areaColor: List<Color>,
 ) {
-    val xMaxMilestone = (xMilestonesCounter - 1) * xStep + initialXValue
     val yMaxMilestone = (yMilestonesCounter - 1) * yStep + initialYValue
 
-    val xPxPerUnit = (endDrawingWidth - startDrawingWidth) / (xMaxMilestone - initialXValue)
+    val xPxPerUnit = (endDrawingWidth - startDrawingWidth) / (xMilestonesCounter - 1)
     val yPxPerUnit = (endDrawingHeight - startDrawingHeight) / (yMaxMilestone - initialYValue)
 
     val dataPoints = mutableListOf<Offset>()
@@ -329,8 +319,8 @@ private fun DrawScope.dataDrawing(
     for (i in points.indices) {
 
         val p0 = Offset(
-            x = (points[i].xValue - initialXValue) * xPxPerUnit + startDrawingWidth,
-            y = endDrawingHeight - (points[i].yValue - initialYValue) * yPxPerUnit,
+            x = i * xPxPerUnit + startDrawingWidth,
+            y = (endDrawingHeight - (points[i].yValue.toDouble() - initialYValue) * yPxPerUnit).toFloat()
         )
 
         dataPoints.add(p0)
@@ -338,8 +328,8 @@ private fun DrawScope.dataDrawing(
         points.getOrNull(i + 1)?.let { nextPoint ->
 
             val p3 = Offset(
-                x = (nextPoint.xValue - initialXValue) * xPxPerUnit + startDrawingWidth,
-                y = endDrawingHeight - (nextPoint.yValue - initialYValue) * yPxPerUnit,
+                x = (i + 1) * xPxPerUnit + startDrawingWidth,
+                y = (endDrawingHeight - (nextPoint.yValue.toDouble() - initialYValue) * yPxPerUnit).toFloat(),
             )
 
             val xBezierConnectionPoint = (p0.x + p3.x) / 2
@@ -405,10 +395,7 @@ fun GraphPreview() {
     MaterialTheme {
         Graph(
             points = PreviewValues.points,
-            initialXValue = 1,
-            initialYValue = 10,
-            xStep = 1f,
-            yStep = 10f,
+            step = 10f,
             xTextSize = 4.sp,
             xTextColor = Color.Magenta,
             xTextPadding = (-1).dp,
@@ -444,10 +431,7 @@ fun GraphBasePreview() {
     MaterialTheme {
         Graph(
             points = PreviewValues.points,
-            initialXValue = 1,
-            initialYValue = 10,
-            xStep = 1f,
-            yStep = 10f,
+            step = 10f,
             modifier = Modifier
                 .fillMaxSize()
                 .background(color = Color.White),
@@ -458,15 +442,15 @@ fun GraphBasePreview() {
 private object PreviewValues {
     val points by lazy {
         listOf(
-            GraphData((1), 100),
-            GraphData((2), 15),
-            GraphData((3), 32),
-            GraphData((4), 10),
-            GraphData((5), 67),
-            GraphData((6), 53),
-            GraphData((7), 87),
-            GraphData((8), 100),
-            GraphData((9), 29),
+            GraphData("1", 100),
+            GraphData("2", 15),
+            GraphData("3", 32),
+            GraphData("4", 10),
+            GraphData("5", 67),
+            GraphData("6", 53),
+            GraphData("7", 87),
+            GraphData("8", 100),
+            GraphData("9", 29),
         )
     }
 }
