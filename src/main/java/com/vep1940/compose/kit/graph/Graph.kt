@@ -42,6 +42,7 @@ fun Graph(
     xMilestonesHeight: Dp = 1.dp,
     xMilestonesWidth: Dp = 1.dp,
     xMilestonesColor: Color = Color.Black,
+    xMatrixColor: Color = Color.Black,
     xAxisColor: Color = Color.Black,
     yTextSize: TextUnit = 8.sp,
     yTextColor: Color = Color.Black,
@@ -49,6 +50,7 @@ fun Graph(
     yMilestonesHeight: Dp = 1.dp,
     yMilestonesWidth: Dp = 1.dp,
     yMilestonesColor: Color = Color.Black,
+    yMatrixColor: Color = Color.Black,
     yAxisColor: Color = Color.Black,
     pointsRadius: Dp = 4.dp,
     pointsColor: Color = Color.Black,
@@ -91,41 +93,45 @@ fun Graph(
             milestonesCounter = xAxisMilestonesCounter,
             initialValue = initialXValue,
             step = xStep,
-            endHeight = endDrawingHeight,
             startWidth = startDrawingWidth,
+            startHeight = startDrawingHeight,
             endWidth = endDrawingWidth,
+            endHeight = endDrawingHeight,
             textSize = xTextSize,
             textColor = xTextColor,
             milestonesHeight = xMilestonesHeight,
             milestonesWidth = xMilestonesWidth,
             milestonesColor = xMilestonesColor,
+            matrixColor = xMatrixColor,
             axisColor = xAxisColor,
             nativePaint = nativePaint,
             composePaint = composePaint,
         )
 
         yAxisDrawing(
-            yAxisMilestonesCounter = yAxisMilestonesCounter,
+            milestonesCounter = yAxisMilestonesCounter,
             initialValue = initialYValue,
             step = yStep,
             startWidth = startDrawingWidth,
             startHeight = startDrawingHeight,
+            endWidth = endDrawingWidth,
             endHeight = endDrawingHeight,
             textSize = yTextSize,
             textColor = yTextColor,
             milestonesHeight = yMilestonesHeight,
             milestonesWidth = yMilestonesWidth,
             milestonesColor = yMilestonesColor,
+            matrixColor = yMatrixColor,
             axisColor = yAxisColor,
             nativePaint = nativePaint,
             composePaint = composePaint,
         )
 
         dataDrawing(
-            xAxisMilestonesCounter = xAxisMilestonesCounter,
+            xMilestonesCounter = xAxisMilestonesCounter,
             xStep = xStep,
             initialXValue = initialXValue,
-            yAxisMilestonesCounter = yAxisMilestonesCounter,
+            yMilestonesCounter = yAxisMilestonesCounter,
             yStep = yStep,
             initialYValue = initialYValue,
             endDrawingWidth = endDrawingWidth,
@@ -162,14 +168,16 @@ private fun DrawScope.xAxisDrawing(
     milestonesCounter: Int,
     initialValue: Int,
     step: Float,
-    endHeight: Float,
     startWidth: Float,
+    startHeight: Float,
     endWidth: Float,
+    endHeight: Float,
     textSize: TextUnit,
     textColor: Color,
     milestonesHeight: Dp,
     milestonesWidth: Dp,
     milestonesColor: Color,
+    matrixColor: Color,
     axisColor: Color,
     nativePaint: Paint,
     composePaint: AndroidPaint,
@@ -207,6 +215,14 @@ private fun DrawScope.xAxisDrawing(
                 paint = paint,
             )
         }
+
+        composePaint.withColor(matrixColor) { paint ->
+            drawContext.canvas.drawLine(
+                Offset(currentWidth, startHeight),
+                Offset(currentWidth, endHeight),
+                paint,
+            )
+        }
     }
 
     composePaint.withColor(axisColor) { paint ->
@@ -219,26 +235,28 @@ private fun DrawScope.xAxisDrawing(
 }
 
 private fun DrawScope.yAxisDrawing(
-    yAxisMilestonesCounter: Int,
+    milestonesCounter: Int,
     initialValue: Int,
     step: Float,
     startWidth: Float,
     startHeight: Float,
+    endWidth: Float,
     endHeight: Float,
     textSize: TextUnit,
     textColor: Color,
     milestonesHeight: Dp,
     milestonesWidth: Dp,
     milestonesColor: Color,
+    matrixColor: Color,
     axisColor: Color,
     nativePaint: Paint,
     composePaint: AndroidPaint,
 ) {
     val height = endHeight - startHeight
 
-    val spaceBetweenMilestones = height / (yAxisMilestonesCounter - 1)
+    val spaceBetweenMilestones = height / (milestonesCounter - 1)
 
-    for (i in 0 until yAxisMilestonesCounter) {
+    for (i in 0 until milestonesCounter) {
         val milestoneText = (initialValue + i * step).toInt().toString()
 
         val textHeight = nativePaint.getTextHeight(milestoneText)
@@ -268,6 +286,14 @@ private fun DrawScope.yAxisDrawing(
                 paint = paint,
             )
         }
+
+        composePaint.withColor(matrixColor) { paint ->
+            drawContext.canvas.drawLine(
+                Offset(startWidth, currentHeight),
+                Offset(endWidth, currentHeight),
+                paint,
+            )
+        }
     }
 
     composePaint.withColor(axisColor) { paint ->
@@ -280,10 +306,10 @@ private fun DrawScope.yAxisDrawing(
 }
 
 private fun DrawScope.dataDrawing(
-    xAxisMilestonesCounter: Int,
+    xMilestonesCounter: Int,
     xStep: Float,
     initialXValue: Int,
-    yAxisMilestonesCounter: Int,
+    yMilestonesCounter: Int,
     yStep: Float,
     initialYValue: Int,
     endDrawingWidth: Float,
@@ -298,8 +324,8 @@ private fun DrawScope.dataDrawing(
     areaColor: List<Color>,
     composePaint: AndroidPaint,
 ) {
-    val xMaxMilestone = (xAxisMilestonesCounter - 1) * xStep + initialXValue
-    val yMaxMilestone = (yAxisMilestonesCounter - 1) * yStep + initialYValue
+    val xMaxMilestone = (xMilestonesCounter - 1) * xStep + initialXValue
+    val yMaxMilestone = (yMilestonesCounter - 1) * yStep + initialYValue
 
     val xPxPerUnit = (endDrawingWidth - startDrawingWidth) / (xMaxMilestone - initialXValue)
     val yPxPerUnit = (endDrawingHeight - startDrawingHeight) / (yMaxMilestone - initialYValue)
@@ -393,6 +419,7 @@ fun GraphPreview() {
             xMilestonesHeight = 4.dp,
             xMilestonesWidth = 4.dp,
             xMilestonesColor = Color.Green,
+            xMatrixColor = Color.Green,
             xAxisColor = Color.Red,
             yTextSize = 8.sp,
             yTextColor = Color.Cyan,
@@ -400,6 +427,7 @@ fun GraphPreview() {
             yMilestonesHeight = 2.dp,
             yMilestonesWidth = 2.dp,
             yMilestonesColor = Color.Magenta,
+            yMatrixColor = Color.Red,
             yAxisColor = Color.Green,
             pointsRadius = 4.dp,
             pointsColor = Color.Blue,
