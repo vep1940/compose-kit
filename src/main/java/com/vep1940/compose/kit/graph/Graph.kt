@@ -27,10 +27,6 @@ import com.vep1940.compose.kit.util.withTextSize
 import kotlin.math.ceil
 import android.graphics.Paint as NativePaint
 
-private object Constants {
-    val milestonesMarkSize = 1.dp
-}
-
 
 @Composable
 fun Graph(
@@ -43,18 +39,22 @@ fun Graph(
     xTextSize: TextUnit = 8.sp,
     xTextColor: Color = Color.Black,
     xTextPadding: Dp = 0.dp,
+    xMilestonesHeight: Dp = 1.dp,
+    xMilestonesWidth: Dp = 1.dp,
     xMilestonesColor: Color = Color.Black,
     xAxisColor: Color = Color.Black,
     yTextSize: TextUnit = 8.sp,
     yTextColor: Color = Color.Black,
     yTextPadding: Dp = 2.dp,
+    yMilestonesHeight: Dp = 1.dp,
+    yMilestonesWidth: Dp = 1.dp,
     yMilestonesColor: Color = Color.Black,
     yAxisColor: Color = Color.Black,
     pointsRadius: Dp = 4.dp,
     pointsColor: Color = Color.Black,
     lineWidth: Dp = 1.dp,
     lineColor: Color = Color.Black,
-    areaColor: List<Color> = listOf(Color.Transparent, Color.Transparent)
+    areaColor: List<Color> = listOf(Color.Transparent, Color.Transparent),
 ) {
     Canvas(
         modifier = modifier
@@ -77,13 +77,13 @@ fun Graph(
         val pointsRadiusPx = pointsRadius.toPx()
 
         val startDrawingWidth = yTextWidth + maxOf(
-            Constants.milestonesMarkSize.toPx(),
+            yMilestonesWidth.toPx(),
             pointsRadiusPx
         ) + yTextPadding.toPx()
         val endDrawingWidth = size.width - maxOf((xTextWidth / 2), pointsRadiusPx)
         val startDrawingHeight = maxOf(yTextHeight / 2, pointsRadiusPx)
         val endDrawingHeight = size.height - (xTextHeight + maxOf(
-            Constants.milestonesMarkSize.toPx(),
+            xMilestonesHeight.toPx(),
             pointsRadiusPx
         ) + xTextPadding.toPx())
 
@@ -96,6 +96,8 @@ fun Graph(
             endWidth = endDrawingWidth,
             textSize = xTextSize,
             textColor = xTextColor,
+            milestonesHeight = xMilestonesHeight,
+            milestonesWidth = xMilestonesWidth,
             milestonesColor = xMilestonesColor,
             axisColor = xAxisColor,
             nativePaint = nativePaint,
@@ -111,6 +113,8 @@ fun Graph(
             endHeight = endDrawingHeight,
             textSize = yTextSize,
             textColor = yTextColor,
+            milestonesHeight = yMilestonesHeight,
+            milestonesWidth = yMilestonesWidth,
             milestonesColor = yMilestonesColor,
             axisColor = yAxisColor,
             nativePaint = nativePaint,
@@ -163,6 +167,8 @@ private fun DrawScope.xAxisDrawing(
     endWidth: Float,
     textSize: TextUnit,
     textColor: Color,
+    milestonesHeight: Dp,
+    milestonesWidth: Dp,
     milestonesColor: Color,
     axisColor: Color,
     nativePaint: Paint,
@@ -189,12 +195,16 @@ private fun DrawScope.xAxisDrawing(
                 )
             }
         }
-
         composePaint.withColor(milestonesColor) { paint ->
-            drawContext.canvas.drawLine(
-                Offset(currentWidth, endHeight),
-                Offset(currentWidth, endHeight + Constants.milestonesMarkSize.toPx()),
-                paint,
+            val milestonesHeightPx = milestonesHeight.toPx()
+            val milestonesWidthPx = milestonesWidth.toPx()
+
+            drawContext.canvas.drawRect(
+                left = currentWidth - milestonesWidthPx / 2,
+                top = endHeight,
+                right = currentWidth + milestonesWidthPx / 2,
+                bottom = endHeight + milestonesHeightPx,
+                paint = paint,
             )
         }
     }
@@ -217,6 +227,8 @@ private fun DrawScope.yAxisDrawing(
     endHeight: Float,
     textSize: TextUnit,
     textColor: Color,
+    milestonesHeight: Dp,
+    milestonesWidth: Dp,
     milestonesColor: Color,
     axisColor: Color,
     nativePaint: Paint,
@@ -245,10 +257,15 @@ private fun DrawScope.yAxisDrawing(
         }
 
         composePaint.withColor(milestonesColor) { paint ->
-            drawContext.canvas.drawLine(
-                Offset(startWidth, currentHeight),
-                Offset(startWidth - Constants.milestonesMarkSize.toPx(), currentHeight),
-                paint,
+            val milestonesHeightPx = milestonesHeight.toPx()
+            val milestonesWidthPx = milestonesWidth.toPx()
+
+            drawContext.canvas.drawRect(
+                left = startWidth - milestonesWidthPx,
+                top = currentHeight - milestonesHeightPx / 2,
+                right = startWidth,
+                bottom = currentHeight + milestonesHeightPx / 2,
+                paint = paint,
             )
         }
     }
@@ -373,12 +390,16 @@ fun GraphPreview() {
             xTextSize = 4.sp,
             xTextColor = Color.Magenta,
             xTextPadding = (-1).dp,
+            xMilestonesHeight = 4.dp,
+            xMilestonesWidth = 4.dp,
             xMilestonesColor = Color.Green,
             xAxisColor = Color.Red,
             yTextSize = 8.sp,
             yTextColor = Color.Cyan,
             yTextPadding = 1.dp,
-            yMilestonesColor = Color.Blue,
+            yMilestonesHeight = 2.dp,
+            yMilestonesWidth = 2.dp,
+            yMilestonesColor = Color.Magenta,
             yAxisColor = Color.Green,
             pointsRadius = 4.dp,
             pointsColor = Color.Blue,
