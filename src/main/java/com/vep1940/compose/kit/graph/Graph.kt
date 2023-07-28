@@ -8,7 +8,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.AndroidPaint
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -52,7 +52,7 @@ fun Graph(
     yMilestonesColor: Color = Color.Black,
     yMatrixColor: Color = Color.Black,
     yAxisColor: Color = Color.Black,
-    pointsRadius: Dp = 4.dp,
+    pointsRadius: Dp = 2.dp,
     pointsColor: Color = Color.Black,
     lineWidth: Dp = 1.dp,
     lineColor: Color = Color.Black,
@@ -63,7 +63,6 @@ fun Graph(
             .fillMaxSize()
     ) {
 
-        val composePaint = AndroidPaint()
         val nativePaint = NativePaint()
 
         val xMax = points.maxOf { it.xValue }
@@ -105,7 +104,6 @@ fun Graph(
             matrixColor = xMatrixColor,
             axisColor = xAxisColor,
             nativePaint = nativePaint,
-            composePaint = composePaint,
         )
 
         yAxisDrawing(
@@ -124,7 +122,6 @@ fun Graph(
             matrixColor = yMatrixColor,
             axisColor = yAxisColor,
             nativePaint = nativePaint,
-            composePaint = composePaint,
         )
 
         dataDrawing(
@@ -144,7 +141,6 @@ fun Graph(
             lineWidth = lineWidth,
             lineColor = lineColor,
             areaColor = areaColor,
-            composePaint = composePaint,
         )
     }
 
@@ -180,7 +176,6 @@ private fun DrawScope.xAxisDrawing(
     matrixColor: Color,
     axisColor: Color,
     nativePaint: Paint,
-    composePaint: AndroidPaint,
 ) {
 
     val width = endWidth - startWidth
@@ -203,35 +198,34 @@ private fun DrawScope.xAxisDrawing(
                 )
             }
         }
-        composePaint.withColor(milestonesColor) { paint ->
-            val milestonesHeightPx = milestonesHeight.toPx()
-            val milestonesWidthPx = milestonesWidth.toPx()
 
-            drawContext.canvas.drawRect(
-                left = currentWidth - milestonesWidthPx / 2,
-                top = endHeight,
-                right = currentWidth + milestonesWidthPx / 2,
-                bottom = endHeight + milestonesHeightPx,
-                paint = paint,
+        val milestonesWidthPx = milestonesWidth.toPx()
+        val milestonesHeightPx = milestonesHeight.toPx()
+
+        drawRect(
+            color = milestonesColor,
+            topLeft = Offset(
+                x = currentWidth - milestonesWidthPx / 2,
+                y = endHeight,
+            ),
+            size = Size(
+                width = milestonesWidthPx,
+                height = milestonesHeightPx,
             )
-        }
+        )
 
-        composePaint.withColor(matrixColor) { paint ->
-            drawContext.canvas.drawLine(
-                Offset(currentWidth, startHeight),
-                Offset(currentWidth, endHeight),
-                paint,
-            )
-        }
-    }
-
-    composePaint.withColor(axisColor) { paint ->
-        drawContext.canvas.drawLine(
-            Offset(startWidth, endHeight),
-            Offset(endWidth, endHeight),
-            paint,
+        drawLine(
+            color = matrixColor,
+            start = Offset(currentWidth, startHeight),
+            end = Offset(currentWidth, endHeight),
         )
     }
+
+    drawLine(
+        color = axisColor,
+        start = Offset(startWidth, endHeight),
+        end = Offset(endWidth, endHeight),
+    )
 }
 
 private fun DrawScope.yAxisDrawing(
@@ -250,7 +244,6 @@ private fun DrawScope.yAxisDrawing(
     matrixColor: Color,
     axisColor: Color,
     nativePaint: Paint,
-    composePaint: AndroidPaint,
 ) {
     val height = endHeight - startHeight
 
@@ -274,35 +267,35 @@ private fun DrawScope.yAxisDrawing(
             }
         }
 
-        composePaint.withColor(milestonesColor) { paint ->
-            val milestonesHeightPx = milestonesHeight.toPx()
-            val milestonesWidthPx = milestonesWidth.toPx()
+        val milestonesWidthPx = milestonesWidth.toPx()
+        val milestonesHeightPx = milestonesHeight.toPx()
 
-            drawContext.canvas.drawRect(
-                left = startWidth - milestonesWidthPx,
-                top = currentHeight - milestonesHeightPx / 2,
-                right = startWidth,
-                bottom = currentHeight + milestonesHeightPx / 2,
-                paint = paint,
+        drawRect(
+            color = milestonesColor,
+            topLeft = Offset(
+                x = startWidth - milestonesWidthPx,
+                y = currentHeight - milestonesHeightPx / 2,
+            ),
+            size = Size(
+                width = milestonesWidthPx,
+                height = milestonesHeightPx,
             )
-        }
-
-        composePaint.withColor(matrixColor) { paint ->
-            drawContext.canvas.drawLine(
-                Offset(startWidth, currentHeight),
-                Offset(endWidth, currentHeight),
-                paint,
-            )
-        }
-    }
-
-    composePaint.withColor(axisColor) { paint ->
-        drawContext.canvas.drawLine(
-            Offset(startWidth, startHeight),
-            Offset(startWidth, endHeight),
-            paint,
         )
+
+        drawLine(
+            color = matrixColor,
+            start = Offset(startWidth, currentHeight),
+            end = Offset(endWidth, currentHeight),
+        )
+
     }
+
+    drawLine(
+        color = axisColor,
+        start = Offset(startWidth, startHeight),
+        end = Offset(startWidth, endHeight),
+    )
+
 }
 
 private fun DrawScope.dataDrawing(
@@ -322,7 +315,6 @@ private fun DrawScope.dataDrawing(
     lineWidth: Dp,
     lineColor: Color,
     areaColor: List<Color>,
-    composePaint: AndroidPaint,
 ) {
     val xMaxMilestone = (xMilestonesCounter - 1) * xStep + initialXValue
     val yMaxMilestone = (yMilestonesCounter - 1) * yStep + initialYValue
@@ -398,15 +390,11 @@ private fun DrawScope.dataDrawing(
     )
 
     dataPoints.forEach { point ->
-        with(drawContext.canvas) {
-            composePaint.withColor(pointsColor) { composePaint ->
-                drawCircle(
-                    center = point,
-                    radius = pointsRadius.toPx(),
-                    paint = composePaint,
-                )
-            }
-        }
+        drawCircle(
+            center = point,
+            radius = pointsRadius.toPx(),
+            color = pointsColor,
+        )
     }
 }
 
