@@ -67,8 +67,9 @@ fun <T : Number> Graph(
         modifier = modifier
             .fillMaxSize()
     ) {
-        val yMax = points.maxOf { it.yValue.toDouble() }
-        val initialYValue = floor(points.minOf { it.yValue.toDouble() } / step) * step
+        val notNullValues = points.mapNotNull { it.yValue?.toDouble() }
+        val yMax = notNullValues.max()
+        val initialYValue = floor(notNullValues.min() / step) * step
 
         // maxValue - initialValue plus 1 in order to add the initialValue to the difference
         val xMilestonesCounter = points.size
@@ -327,52 +328,55 @@ private fun <T : Number> DrawScope.dataDrawing(
     val linePath = Path()
     val areaPath = Path()
 
+    var previousPoint: Offset? = null
+
     for (i in points.indices) {
 
-        val p0 = Offset(
-            x = i * xPxPerUnit + startDrawingWidth,
-            y = (endDrawingHeight - (points[i].yValue.toDouble() - initialYValue) * yPxPerUnit).toFloat()
-        )
-
-        dataPoints.add(p0)
-
-        points.getOrNull(i + 1)?.let { nextPoint ->
+        points[i].yValue?.let { actualValue ->
 
             val p3 = Offset(
-                x = (i + 1) * xPxPerUnit + startDrawingWidth,
-                y = (endDrawingHeight - (nextPoint.yValue.toDouble() - initialYValue) * yPxPerUnit).toFloat(),
+                x = i * xPxPerUnit + startDrawingWidth,
+                y = (endDrawingHeight - (actualValue.toDouble() - initialYValue) * yPxPerUnit).toFloat()
             )
 
-            val xBezierConnectionPoint = (p0.x + p3.x) / 2
+            dataPoints.add(p3)
 
-            val p1 = Offset(
-                x = xBezierConnectionPoint,
-                y = p0.y,
-            )
+            previousPoint?.let {
+                val p0 = it
 
-            val p2 = Offset(
-                x = xBezierConnectionPoint,
-                y = p3.y,
-            )
+                val xBezierConnectionPoint = (p0.x + p3.x) / 2
 
-            val path = Path().apply {
-                moveTo(p0.x, p0.y)
-                cubicTo(
-                    p1.x, p1.y,
-                    p2.x, p2.y,
-                    p3.x, p3.y,
+                val p1 = Offset(
+                    x = xBezierConnectionPoint,
+                    y = p0.y,
                 )
+
+                val p2 = Offset(
+                    x = xBezierConnectionPoint,
+                    y = p3.y,
+                )
+
+                val path = Path().apply {
+                    moveTo(p0.x, p0.y)
+                    cubicTo(
+                        p1.x, p1.y,
+                        p2.x, p2.y,
+                        p3.x, p3.y,
+                    )
+                }
+
+                linePath.addPath(path = path)
+
+                path.apply {
+                    lineTo(p3.x, endDrawingHeight)
+                    lineTo(p0.x, endDrawingHeight)
+                    close()
+                }
+
+                areaPath.addPath(path = path)
             }
 
-            linePath.addPath(path = path)
-
-            path.apply {
-                lineTo(p3.x, endDrawingHeight)
-                lineTo(p0.x, endDrawingHeight)
-                close()
-            }
-
-            areaPath.addPath(path = path)
+            previousPoint = p3
         }
     }
 
@@ -452,18 +456,20 @@ fun GraphBasePreview() {
 }
 
 private object PreviewValues {
-    val points by lazy {
+    val points: List<GraphData<Float>> by lazy {
         listOf(
             GraphData("1", 100f),
             GraphData("2", 15f),
             GraphData("3", 32f),
             GraphData("4", 10f),
-            GraphData("5", 67f),
-            GraphData("6", 53f),
-            GraphData("7", 87f),
-            GraphData("8", 100f),
-            GraphData("9", 29f),
-            GraphData("9", 29.3f),
+            GraphData("5", null),
+            GraphData("6", 67f),
+            GraphData("7", 53f),
+            GraphData("8", 87f),
+            GraphData("9", 100f),
+            GraphData("10", null),
+            GraphData("11", 29f),
+            GraphData("11-2", 29.3f),
         )
     }
 }
