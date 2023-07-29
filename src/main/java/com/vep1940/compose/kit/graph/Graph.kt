@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.vep1940.compose.kit.util.currentJavaLocale
+import java.util.Locale
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -46,6 +48,7 @@ fun <T : Number> Graph(
     yTextSize: TextUnit = 8.sp,
     yTextColor: Color = Color.Black,
     yTextPadding: Dp = 2.dp,
+    yMilestonesDecimals: Int = 2,
     yMilestonesHeight: Dp = 1.dp,
     yMilestonesWidth: Dp = 1.dp,
     yMilestonesColor: Color = Color.Black,
@@ -58,6 +61,7 @@ fun <T : Number> Graph(
     areaColor: List<Color> = listOf(Color.Transparent, Color.Transparent),
 ) {
     val textMeasurer = rememberTextMeasurer()
+    val javaLocale = currentJavaLocale()
 
     Canvas(
         modifier = modifier
@@ -83,8 +87,10 @@ fun <T : Number> Graph(
             text = points.last().xValue,
             style = xTextStyle,
         ).size
+
+        val lastYMilestoneValue = ((yMilestonesCounter - 1) * step + initialYValue)
         val lastYTextSize = textMeasurer.measure(
-            text = ((yMilestonesCounter - 1) * step + initialYValue).toString(), // TODO - NUMBER OF DECIMALS ?
+            text = String.format(javaLocale, "%.${yMilestonesDecimals}f", lastYMilestoneValue),
             style = yTextStyle,
         ).size
 
@@ -128,11 +134,13 @@ fun <T : Number> Graph(
             textMeasurer = textMeasurer,
             measuredTextSize = lastYTextSize,
             textStyle = yTextStyle,
+            milestoneDecimals = yMilestonesDecimals,
             milestonesHeight = yMilestonesHeight,
             milestonesWidth = yMilestonesWidth,
             milestonesColor = yMilestonesColor,
             matrixColor = yMatrixColor,
             axisColor = yAxisColor,
+            javaLocale = javaLocale,
         )
 
         dataDrawing(
@@ -237,11 +245,13 @@ private fun DrawScope.yAxisDrawing(
     textMeasurer: TextMeasurer,
     measuredTextSize: IntSize,
     textStyle: TextStyle,
+    milestoneDecimals: Int,
     milestonesHeight: Dp,
     milestonesWidth: Dp,
     milestonesColor: Color,
     matrixColor: Color,
     axisColor: Color,
+    javaLocale: Locale,
 ) {
     val height = endHeight - startHeight
 
@@ -250,9 +260,10 @@ private fun DrawScope.yAxisDrawing(
     for (i in 0 until milestonesCounter) {
         val currentHeight = endHeight - i * spaceBetweenMilestones
 
+        val milestoneValue = initialValue + i * step
         drawText(
             textMeasurer = textMeasurer,
-            text = "${initialValue + i * step}", // TODO - NUMBER OF DECIMALS ?
+            text = String.format(javaLocale, "%.${milestoneDecimals}f", milestoneValue),
             style = textStyle,
             topLeft = Offset(
                 x = 0f,
@@ -407,6 +418,7 @@ fun GraphPreview() {
             yTextSize = 8.sp,
             yTextColor = Color.Cyan,
             yTextPadding = 1.dp,
+            yMilestonesDecimals = 3,
             yMilestonesHeight = 2.dp,
             yMilestonesWidth = 2.dp,
             yMilestonesColor = Color.Magenta,
